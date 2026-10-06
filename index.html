@@ -1,0 +1,572 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>로그 발췌기</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700&family=Nanum+Myeongjo:wght@400;700&family=Noto+Sans+KR:wght@400;700&family=Noto+Serif+KR:wght@400;700&display=swap">
+
+<style>
+  :root{
+    --ground:#f5f4f0;
+    --card:#ffffff;
+    --ink:#092052;
+    --muted:#6b7592;
+    --hair:#092052;
+    --band:#e9eaee;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:22px 14px 64px; color:var(--ink);
+    background-color:var(--ground);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
+    font-size:15px; line-height:1.6; -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:620px;margin:0 auto;border:1px solid var(--hair);background:var(--card)}
+
+  header{
+    margin:0;padding:11px 15px;border-bottom:1px solid var(--hair);
+    display:flex;align-items:center;background:var(--ground);
+  }
+  h1{margin:0;font-size:16px;font-weight:700;letter-spacing:.06em}
+  header:after{
+    content:'';width:6px;height:6px;background:var(--ink);
+    box-shadow:11px 0 0 var(--ink), 22px 0 0 var(--ink);
+    margin:0 25px 0 auto;
+  }
+
+  section{background:var(--card);border:0;border-bottom:1px solid var(--hair);padding:16px 15px}
+  section:last-of-type{border-bottom:0}
+  .step{margin-bottom:14px}
+  .step i{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:24px;height:24px;background:var(--ink);color:#fff;
+    font-style:normal;font-size:13px;font-weight:700;letter-spacing:.02em;
+  }
+  .hint{color:var(--muted);font-size:12.5px;margin:10px 0 0;line-height:1.65}
+
+  textarea{
+    width:100%;min-height:190px;padding:11px 12px;
+    border:1px solid var(--hair);border-radius:0;
+    font:inherit;font-size:14px;line-height:1.7;resize:vertical;
+    background:#fff;color:var(--ink);
+  }
+  textarea:focus-visible,select:focus-visible,input:focus-visible,button:focus-visible{
+    outline:2px solid var(--ink);outline-offset:1px
+  }
+  summary:focus{outline:none}
+
+  .syntax{
+    margin:11px 0 0;padding:11px 13px;background:var(--band);
+    border:1px solid var(--hair);font-size:13px;line-height:2;color:var(--ink);
+  }
+  .syntax code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:12.5px;background:#fff;color:var(--ink);
+    padding:1px 6px;border:1px solid var(--hair);
+  }
+  .syntax span{color:var(--muted)}
+
+  .row{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:11px}
+  button{
+    font:inherit;font-size:13.5px;font-weight:600;padding:9px 15px;border-radius:0;
+    border:1px solid var(--hair);background:#fff;color:var(--ink);cursor:pointer;
+    letter-spacing:.02em;
+  }
+  button.primary{background:var(--ink);border-color:var(--ink);color:#fff}
+  button.wide{width:100%;padding:13px;font-size:14px;letter-spacing:.1em}
+  button:disabled{opacity:.4;cursor:default}
+  label.file{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:13.5px;font-weight:600;padding:9px 15px;
+    border:1px solid var(--hair);background:#fff;color:var(--ink);cursor:pointer;
+    letter-spacing:.02em;
+  }
+  label.file input[type=file]{display:none}
+
+  .swatches{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:13px}
+  .swatches>span{font-size:13px;font-weight:700;color:var(--ink);margin-right:4px;letter-spacing:.04em}
+  .sw{width:26px;height:26px;border-radius:0;border:1px solid var(--hair);padding:0;cursor:pointer}
+  .sw.on{outline:2px solid var(--ink);outline-offset:2px}
+  .mode{font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:0;margin-left:3px}
+  .mode.on{background:var(--ink);border-color:var(--ink);color:#fff}
+
+  .opts{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+  .opts select,.opts input[type=text]{flex:1;min-width:132px}
+  select,input[type=text]{
+    font:inherit;font-size:13.5px;padding:9px 11px;
+    border:1px solid var(--hair);border-radius:0;background:#fff;color:var(--ink);
+  }
+  input[type=color]{
+    display:block;width:28px;height:20px;padding:0;
+    border:1px solid var(--hair);border-radius:0;background:none;cursor:pointer;
+  }
+  .toggle{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;margin-top:14px}
+  .toggle input{width:16px;height:16px;accent-color:var(--ink)}
+  .slider{display:flex;align-items:center;gap:11px;margin-top:12px;font-size:13px;font-weight:600}
+  .slider>span{width:64px;flex:none;letter-spacing:.03em}
+  .slider input{flex:1;accent-color:var(--ink);min-width:0}
+  .slider>b{width:42px;text-align:right;color:var(--muted);font-size:12.5px;font-weight:600}
+
+  details{border-top:1px solid var(--hair)}
+  details:first-of-type{margin-top:16px}
+  summary{
+    list-style:none;cursor:pointer;padding:13px 2px;
+    font-size:13.5px;font-weight:700;letter-spacing:.04em;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  summary::-webkit-details-marker{display:none}
+  summary:after{
+    content:'';width:7px;height:7px;margin-right:5px;
+    border-right:1px solid var(--ink);border-bottom:1px solid var(--ink);
+    transform:rotate(45deg) translate(-2px,-2px);transition:transform .15s;
+  }
+  details[open] summary:after{transform:rotate(-135deg) translate(-3px,-3px)}
+  .panel{padding:0 2px 17px}
+  .panel>*:first-child{margin-top:0}
+
+  @media (max-width:520px){
+    .opts{flex-direction:column;gap:7px}
+    .opts select,.opts input[type=text]{width:100%;min-width:0}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+    .row button,.row label.file{width:100%;justify-content:center;text-align:center}
+    .row button.wide{grid-column:1 / -1}
+    .slider>span{width:58px;font-size:12.5px}
+  }
+
+  /* ---------- 발췌 지면 ---------- */
+  .stage{position:relative;overflow:hidden;margin-top:3px;border:1px solid var(--hair)}
+  #frame{
+    transform-origin:top left; position:relative;
+    width:960px; height:720px;
+    background:#2a2a2a;
+    display:flex; align-items:center; justify-content:center;
+    padding:34px;
+  }
+  #frame.portrait{width:720px;height:1020px}
+  #bgimg{
+    position:absolute; left:0; top:0; right:0; bottom:0;
+    background:center/cover no-repeat; opacity:1;
+  }
+
+  #sheet{
+    background:#fff; color:#1a1a1a; width:100%; height:100%;
+    position:relative; z-index:1;
+    padding:var(--ipy,62px) var(--ipx,66px); display:flex; flex-direction:column;
+    font-family:"Nanum Myeongjo","Apple SD Gothic Neo",serif;
+  }
+
+  #sheet .title{font-size:21px;font-weight:600;letter-spacing:-.01em;margin-bottom:6px;text-align:var(--tal,left);font-family:var(--tf,inherit)}
+  #frame.portrait #sheet .title{font-size:27px;font-weight:700}
+
+  #sheet .rule{margin-bottom:38px;border:0;padding:0}
+  #sheet .rule.short{width:96px;height:2px;background:currentColor}
+  #sheet .rule.full{width:100%;height:1px;background:currentColor;opacity:.45}
+  #sheet .rule.double{width:100%;height:5px;border-top:1px solid currentColor;border-bottom:1px solid currentColor;opacity:.5;background:none}
+  #sheet .rule.dash{width:100%;height:0;border-top:1px dashed currentColor;opacity:.55;background:none}
+  #sheet .rule.dotted{width:100%;height:0;border-top:2px dotted currentColor;opacity:.45;background:none}
+  #sheet .rule.thick{width:100%;height:4px;background:currentColor;opacity:.85}
+  #sheet .rule.mark{width:100%;height:auto;background:none;font-size:15px;letter-spacing:.8em;opacity:.45;text-indent:.8em}
+
+  #sheet .body{flex:1;overflow:hidden;column-count:var(--cols,1);column-gap:2.6em}
+  #sheet .rule.below{margin-bottom:0;margin-top:32px}
+  #sheet p{
+    margin:0 0 15px; font-size:var(--fs,17px); line-height:var(--lh,1.95);
+    letter-spacing:var(--ls,0);
+    text-align:var(--al,justify); text-indent:var(--ti,1em);
+    word-break:keep-all; overflow-wrap:break-word;
+  }
+  #frame.portrait #sheet p{margin-bottom:19px}
+  #sheet .foot{margin-top:18px;font-size:14px;color:inherit;opacity:.55;text-align:right;font-style:italic}
+  #frame.portrait #sheet .foot{text-align:center;font-style:normal;letter-spacing:.08em}
+  #sheet .empty{color:#aaa;font-size:16px;text-align:center;padding-top:60px;text-indent:0}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>로그 발췌기</h1>
+  </header>
+
+  <section>
+    <div class="step"><i>1</i></div>
+    <div class="opts" style="margin-top:0">
+      <input type="text" id="title" placeholder="제목">
+    </div>
+    <textarea id="raw" style="margin-top:8px" placeholder="발췌할 대목을 붙여넣으세요.
+
+**햄버거** 먹기 좋은 날씨네
+_그런 날씨가 어디있어_
+맞아 ==그런 날씨는 없고== __그냥 지금 먹고 싶어__"></textarea>
+    <p class="syntax">
+      <code>**굵게**</code> <span>→ 굵은 글씨</span><br>
+      <code>_기울임_</code> <span>→ 기울인 글씨</span><br>
+      <code>__밑줄__</code> <span>→ 밑줄</span><br>
+      <code>==형광펜==</code> <span>→ 아래에서 고른 색으로 칠하기</span>
+    </p>
+    <div class="swatches">
+      <span>형광펜 색</span>
+      <button class="sw on" data-c="#ffe873" style="background:#ffe873"></button>
+      <button class="sw" data-c="#bdf0c0" style="background:#bdf0c0"></button>
+      <button class="sw" data-c="#bfe4ff" style="background:#bfe4ff"></button>
+      <button class="sw" data-c="#ffc8dd" style="background:#ffc8dd"></button>
+      <button class="sw" data-c="#dbccff" style="background:#dbccff"></button>
+      <button class="sw" data-c="#ffd4a8" style="background:#ffd4a8"></button>
+      <button class="mode on" id="hlmode">밑줄형</button>
+    </div>
+    <div class="opts">
+      <input type="text" id="foot" placeholder="하단 문구 (예: -12- 또는 ⓒ 2026 …)">
+    </div>
+    <p class="hint">빈 줄로 나뉜 덩어리가 문단이 됩니다.</p>
+  </section>
+
+  <section>
+    <div class="step"><i>2</i></div>
+
+    <div class="stage" id="stage">
+      <div id="frame"><div id="bgimg"></div><div id="sheet"><div class="body"><p class="empty">넣은 글이 여기에 나타납니다</p></div></div></div>
+    </div>
+    <div class="row">
+      <button id="save" class="primary wide">PNG로 저장</button>
+    </div>
+
+    <details open>
+      <summary>지면과 정렬</summary>
+      <div class="panel">
+        <div class="opts">
+          <select id="shape">
+            <option value="">가로 지면</option>
+            <option value="portrait">세로 지면</option>
+          </select>
+          <select id="cols">
+            <option value="1">1단</option>
+            <option value="2">2단</option>
+          </select>
+        </div>
+        <div class="opts">
+          <select id="ruletop">
+            <option value="short">위 구분선 · 짧은 선</option>
+            <option value="full">위 구분선 · 가는 선</option>
+            <option value="thick">위 구분선 · 굵은 선</option>
+            <option value="double">위 구분선 · 이중선</option>
+            <option value="dash">위 구분선 · 파선</option>
+            <option value="dotted">위 구분선 · 점선</option>
+            <option value="dots">위 구분선 · 점 세 개</option>
+            <option value="none">위 구분선 · 없음</option>
+          </select>
+          <select id="rulebot">
+            <option value="short">아래 구분선 · 짧은 선</option>
+            <option value="full">아래 구분선 · 가는 선</option>
+            <option value="thick">아래 구분선 · 굵은 선</option>
+            <option value="double">아래 구분선 · 이중선</option>
+            <option value="dash">아래 구분선 · 파선</option>
+            <option value="dotted">아래 구분선 · 점선</option>
+            <option value="dots">아래 구분선 · 점 세 개</option>
+            <option value="none" selected>아래 구분선 · 없음</option>
+          </select>
+        </div>
+        <div class="opts">
+          <select id="talign">
+            <option value="left">제목 정렬 · 왼쪽</option>
+            <option value="center">제목 정렬 · 가운데</option>
+            <option value="right">제목 정렬 · 오른쪽</option>
+          </select>
+          <select id="align">
+            <option value="justify">본문 정렬 · 양끝 맞춤</option>
+            <option value="left">본문 정렬 · 왼쪽</option>
+            <option value="center">본문 정렬 · 가운데</option>
+            <option value="right">본문 정렬 · 오른쪽</option>
+          </select>
+        </div>
+        <label class="toggle"><input type="checkbox" id="indent" checked> 문단 첫 줄 들여쓰기</label>
+      </div>
+    </details>
+
+    <details>
+      <summary>글씨</summary>
+      <div class="panel">
+        <div class="opts">
+          <select id="tfont">
+            <option value="nanummyeongjo">제목 · 나눔명조</option>
+            <option value="notoserif">제목 · 본명조</option>
+            <option value="notosans">제목 · 본고딕</option>
+            <option value="nanumgothic">제목 · 나눔고딕</option>
+            <option value="system">제목 · 기기 기본</option>
+          </select>
+          <select id="font">
+            <option value="nanummyeongjo">본문 · 나눔명조</option>
+            <option value="notoserif">본문 · 본명조</option>
+            <option value="notosans">본문 · 본고딕</option>
+            <option value="nanumgothic">본문 · 나눔고딕</option>
+            <option value="system">본문 · 기기 기본</option>
+          </select>
+        </div>
+        <div class="row">
+          <label class="file">
+            글자색<input type="color" id="textcolor" value="#1a1a1a">
+          </label>
+        </div>
+        <div class="slider"><span>글자 크기</span><input type="range" id="fs" min="12" max="26" step="0.5" value="17"><b id="fsv">17</b></div>
+        <div class="slider"><span>행간</span><input type="range" id="lh" min="1" max="2.8" step="0.05" value="1.95"><b id="lhv">1.95</b></div>
+        <div class="slider"><span>자간</span><input type="range" id="ls" min="-0.15" max="0.2" step="0.005" value="0"><b id="lsv">0</b></div>
+      </div>
+    </details>
+
+    <details>
+      <summary>배경</summary>
+      <div class="panel">
+        <div class="row">
+          <label class="file">사진 고르기<input type="file" id="bg" accept="image/*"></label>
+          <button id="bgclear">사진 빼기</button>
+          <label class="file">
+            배경색<input type="color" id="bgcolor" value="#2a2a2a">
+          </label>
+          <label class="file">
+            지면색<input type="color" id="sheetcolor" value="#ffffff">
+          </label>
+        </div>
+        <div class="slider"><span>불투명도</span><input type="range" id="op" min="0" max="100" value="100"><b id="opv">100</b></div>
+      </div>
+    </details>
+
+    <details>
+      <summary>여백</summary>
+      <div class="panel">
+        <div class="slider"><span>바깥 가로</span><input type="range" id="padx" min="0" max="260" value="34"><b id="padxv">34</b></div>
+        <div class="slider"><span>바깥 세로</span><input type="range" id="pady" min="0" max="260" value="34"><b id="padyv">34</b></div>
+        <div class="slider"><span>안쪽 가로</span><input type="range" id="ipadx" min="8" max="160" value="66"><b id="ipadxv">66</b></div>
+        <div class="slider"><span>안쪽 세로</span><input type="range" id="ipady" min="8" max="160" value="62"><b id="ipadyv">62</b></div>
+        <p class="hint">바깥 여백은 사진이 보이는 넓이, 안쪽 여백은 지면 테두리와 글 사이 간격입니다.</p>
+      </div>
+    </details>
+  </section>
+</div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var hlColor = '#ffe873';
+  var hlUnderline = true;
+
+  var FONTS = {
+    nanummyeongjo:'"Nanum Myeongjo","Apple SD Gothic Neo",serif',
+    notoserif:'"Noto Serif KR","Apple SD Gothic Neo",serif',
+    notosans:'"Noto Sans KR","Apple SD Gothic Neo",sans-serif',
+    nanumgothic:'"Nanum Gothic","Apple SD Gothic Neo",sans-serif',
+    system:'-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif'
+  };
+
+  var RULES = {
+    none:null,
+    short:{cls:'short'}, full:{cls:'full'}, thick:{cls:'thick'},
+    double:{cls:'double'}, dash:{cls:'dash'}, dotted:{cls:'dotted'},
+    dots:{cls:'mark', text:'· · ·'}
+  };
+
+  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function hlStyle(){
+    return hlUnderline
+      ? 'background:linear-gradient(to top, ' + hlColor + ' 42%, transparent 42%)'
+      : 'background-color:' + hlColor;
+  }
+
+  function hlWrap(t){
+    var style = hlStyle();
+    return t.split(/(\s+)/).filter(Boolean).map(function(part){
+      return '<span style="' + style + '">' + part + '</span>';
+    }).join('');
+  }
+
+  /* ---------- 마크다운 ---------- */
+  function md(s){
+    s = esc(s);
+    s = s.replace(/==([^=]+)==/g, function(_, t){ return hlWrap(t); });
+    s = s.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+    s = s.replace(/\*([^*\n]+)\*/g, '$1');
+    s = s.replace(/__([^_]+)__/g, '<u>$1</u>');
+    s = s.replace(/_([^_]+)_/g, '<i>$1</i>');
+    return s;
+  }
+
+  function paragraphs(){
+    return $('raw').value.replace(/\r/g,'').split('\n')
+      .map(function(l){ return l.trim(); })
+      .filter(function(l){ return l; });
+  }
+
+  /* ---------- 지면 ---------- */
+  function render(){
+    var frame = $('frame'), sheet = $('sheet');
+    frame.className = $('shape').value;
+    sheet.style.fontFamily = FONTS[$('font').value] || FONTS.nanummyeongjo;
+
+    var op = $('op').value;
+    $('bgimg').style.opacity = op / 100;
+    $('opv').textContent = op;
+
+    var fs = $('fs').value, lh = $('lh').value, ls = $('ls').value;
+    sheet.style.setProperty('--fs', fs + 'px');
+    sheet.style.setProperty('--lh', lh);
+    sheet.style.setProperty('--ls', ls + 'em');
+    $('fsv').textContent = fs;
+    $('lhv').textContent = lh;
+    $('lsv').textContent = ls;
+
+    sheet.style.backgroundColor = $('sheetcolor').value;
+    sheet.style.color = $('textcolor').value;
+    sheet.style.setProperty('--al', $('align').value);
+    sheet.style.setProperty('--tal', $('talign').value);
+    sheet.style.setProperty('--ti', $('indent').checked ? '1em' : '0');
+
+    var px = $('padx').value, py = $('pady').value;
+    frame.style.padding = py + 'px ' + px + 'px';
+    $('padxv').textContent = px;
+    $('padyv').textContent = py;
+
+    var ix = $('ipadx').value, iy = $('ipady').value;
+    sheet.style.setProperty('--ipx', ix + 'px');
+    sheet.style.setProperty('--ipy', iy + 'px');
+    $('ipadxv').textContent = ix;
+    $('ipadyv').textContent = iy;
+
+    sheet.style.setProperty('--tf', FONTS[$('tfont').value] || FONTS.nanummyeongjo);
+
+    var html = '';
+    var t = $('title').value.trim();
+    if(t) html += '<div class="title">' + md(t) + '</div>';
+
+    var ta = $('talign').value;
+    var rs = ta === 'center' ? 'margin-left:auto;margin-right:auto;text-align:center'
+           : ta === 'right' ? 'margin-left:auto;text-align:right'
+           : 'margin-right:auto;text-align:left';
+    function ruleHTML(id, below){
+      var r = RULES[$(id).value];
+      if(!r) return '';
+      return '<div class="rule ' + r.cls + (below ? ' below' : '') +
+             '" style="' + rs + '">' + (r.text || '') + '</div>';
+    }
+    html += ruleHTML('ruletop', false);
+
+    sheet.style.setProperty('--cols', $('cols').value);
+
+    var paras = paragraphs();
+    html += '<div class="body">';
+    if(!paras.length){
+      html += '<p class="empty">넣은 글이 여기에 나타납니다</p>';
+    } else {
+      paras.forEach(function(line){
+        html += '<p>' + md(line) + '</p>';
+      });
+    }
+    html += '</div>';
+    html += ruleHTML('rulebot', true);
+
+    var f = $('foot').value.trim();
+    if(f) html += '<div class="foot">' + md(f) + '</div>';
+
+    sheet.innerHTML = html;
+    fit();
+  }
+
+  function fit(){
+    var stage = $('stage'), frame = $('frame');
+    frame.style.transform = 'none';
+    var w = frame.offsetWidth, h = frame.offsetHeight;
+    var s = Math.min(1, stage.clientWidth / w);
+    frame.style.transform = 'scale(' + s + ')';
+    stage.style.height = (h * s) + 'px';
+  }
+
+  /* ---------- 배경 사진 ---------- */
+  $('bg').addEventListener('change', function(e){
+    var f = e.target.files[0];
+    if(!f) return;
+    var r = new FileReader();
+    r.onload = function(){ $('bgimg').style.backgroundImage = 'url(' + r.result + ')'; };
+    r.readAsDataURL(f);
+    e.target.value = '';
+  });
+  $('bgclear').addEventListener('click', function(){ $('bgimg').style.backgroundImage = 'none'; });
+  $('bgcolor').addEventListener('input', function(){
+    $('frame').style.backgroundColor = $('bgcolor').value;
+  });
+  $('sheetcolor').addEventListener('input', render);
+  $('textcolor').addEventListener('input', render);
+
+  /* ---------- 저장 ---------- */
+  function save(){
+    var frame = $('frame'), btn = $('save');
+    btn.disabled = true; btn.textContent = '만드는 중…';
+    frame.style.transform = 'none';
+    var ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+    ready.then(function(){
+      return html2canvas(frame, {scale:2, backgroundColor:null, width:frame.offsetWidth, height:frame.offsetHeight});
+    }).then(function(canvas){
+      var name = ($('title').value.trim().replace(/[\\/:*?"<>|]/g,'') || '발췌') + '.png';
+      canvas.toBlob(function(blob){
+        var url = URL.createObjectURL(blob);
+        setTimeout(function(){
+          var file = null;
+          try { file = new File([blob], name, {type:'image/png'}); } catch(e){}
+          if(file && navigator.canShare && navigator.canShare({files:[file]})){
+            navigator.share({files:[file]}).catch(function(){});
+          } else {
+            var a = document.createElement('a');
+            a.download = name;
+            a.href = url;
+            a.click();
+          }
+          btn.disabled = false; btn.textContent = 'PNG로 저장';
+          fit();
+        }, 900);
+      }, 'image/png');
+    }).catch(function(){
+      btn.disabled = false; btn.textContent = 'PNG로 저장';
+      fit();
+      alert('이미지를 만들지 못했습니다. 새로고침한 뒤 다시 시도해 주세요.');
+    });
+  }
+
+  /* ---------- 연결 ---------- */
+  document.querySelector('.swatches').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if(!b) return;
+    if(b.classList.contains('sw')){
+      hlColor = b.dataset.c;
+      Array.prototype.slice.call(document.querySelectorAll('.sw')).forEach(function(s){
+        s.className = 'sw' + (s === b ? ' on' : '');
+      });
+    } else if(b.id === 'hlmode'){
+      hlUnderline = !hlUnderline;
+      b.textContent = hlUnderline ? '밑줄형' : '채움형';
+      b.className = 'mode' + (hlUnderline ? ' on' : '');
+    }
+    render();
+  });
+
+  $('raw').addEventListener('input', render);
+  ['title','foot','font','tfont','ruletop','rulebot','cols','align','talign'].forEach(function(id){
+    $(id).addEventListener('input', render);
+    $(id).addEventListener('change', render);
+  });
+  $('indent').addEventListener('change', render);
+  ['op','fs','lh','ls','padx','pady','ipadx','ipady'].forEach(function(id){
+    $(id).addEventListener('input', render);
+  });
+  $('shape').addEventListener('change', function(){
+    var portrait = $('shape').value === 'portrait';
+    $('padx').value = portrait ? 64 : 34;
+    $('pady').value = portrait ? 74 : 34;
+    $('ipadx').value = portrait ? 42 : 66;
+    $('ipady').value = portrait ? 54 : 62;
+    $('fs').value = portrait ? 16.5 : 17;
+    $('lh').value = portrait ? 1.8 : 1.95;
+    $('indent').checked = !portrait;
+    $('align').value = portrait ? 'left' : 'justify';
+    $('talign').value = portrait ? 'center' : 'left';
+    render();
+  });
+  $('save').addEventListener('click', save);
+  window.addEventListener('resize', fit);
+  render();
+})();
+</script>
